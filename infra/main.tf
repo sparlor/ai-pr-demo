@@ -96,3 +96,48 @@ data "aws_iam_policy_document" "github_actions_policy" {
     resources = ["*"]
   }
 }
+
+resource "aws_security_group" "public_ec2" {
+  name        = "public-ec2-sg"
+  description = "Security group allowing public access to EC2"
+
+  ingress {
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_instance" "public_server" {
+  ami           = data.aws_ami.amazon_linux_2.id
+  instance_type = "t2.micro"
+
+  vpc_security_group_ids = [aws_security_group.public_ec2.id]
+
+  tags = {
+    Name = "public-server"
+  }
+}
+
+data "aws_ami" "amazon_linux_2" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
